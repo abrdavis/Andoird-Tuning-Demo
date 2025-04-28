@@ -18,7 +18,12 @@ import be.tarsos.dsp.pitch.PitchDetectionHandler
 import be.tarsos.dsp.pitch.PitchProcessor
 import com.raveldev.timer.databinding.FragmentTunerBinding
 import kotlin.math.abs
+import kotlin.math.floor
 import kotlin.math.pow
+import kotlin.math.log2
+import kotlin.math.round
+import kotlin.math.roundToInt
+
 
 /**
  * A simple [Fragment] subclass as the default destination in the navigation.
@@ -57,13 +62,16 @@ class TunerFragment : Fragment() {
                 val pdh = PitchDetectionHandler { result, e ->
                     try{
                         val pitchInHz = result.pitch
-                        val closetNote = getClosestNoteString(0, FREQUENCY_LIST.size -1, result.pitch);
+                        if(pitchInHz > 0) {
+                            val closetNote = getClosestNoteString(0, FREQUENCY_LIST.size -1, result.pitch);
+                            //getNoteForFrequency(pitchInHz)
+                            //given our pitch in hz, which value in our map of notes is closest
+                            activity?.runOnUiThread(Runnable {
+                                noteTextView.text = getNoteForFrequency(pitchInHz)
+ 								textView.text = "${pitchInHz}"
+                            })
+                        }
 
-                        //given our pitch in hz, which value in our map of notes is closest
-                        activity?.runOnUiThread(Runnable {
-                            noteTextView.text = closetNote
-                            textView.text = "${pitchInHz}"
-                        })
 
                     }
                     catch(e: Exception){
@@ -93,7 +101,7 @@ class TunerFragment : Fragment() {
     val BASE_NOTE = 81
     val STARTING_NOTE = 0;
     val HIGHEST_NOTE = 127
-    val NOTE_ORDER = arrayOf("C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B")
+    val NOTE_ORDER = listOf("A", "A#", "B", "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#")
     var FREQUENCY_LIST  = mutableListOf<Float>()
     val MAX_NOTE_ORDER = 11;
     val STARTING_OCTAVE = -2;
@@ -117,6 +125,19 @@ class TunerFragment : Fragment() {
             }
 
         }
+
+    }
+
+    private fun getNoteForFrequency(frequency: Float) : String{
+
+        val semitones = 12 * log2(frequency / BASE_FREQUENCY_HZ)
+
+        val noteIndex = ((semitones % 12) + 12) % 12  // Ensure positive index
+
+        val octave = (semitones / 12).toInt() + 4 // Relative to A4
+
+        return "${NOTE_ORDER[noteIndex.toInt()]} ${octave}"
+
 
     }
     private fun getClosestNoteString(
