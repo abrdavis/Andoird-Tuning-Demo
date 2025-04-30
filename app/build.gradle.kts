@@ -8,7 +8,7 @@ android {
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.raveldev.timer"
+        applicationId = "com.raveldev.tuner"
         minSdk = 29
         targetSdk = 35
         versionCode = 1
