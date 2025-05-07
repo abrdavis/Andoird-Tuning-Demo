@@ -17,20 +17,13 @@ import be.tarsos.dsp.io.android.AudioDispatcherFactory
 import be.tarsos.dsp.pitch.PitchDetectionHandler
 import be.tarsos.dsp.pitch.PitchProcessor
 import com.raveldev.timer.databinding.FragmentTunerBinding
-import com.raveldev.tuner.models.TunerResult
-import kotlin.math.abs
-import kotlin.math.pow
-import kotlin.math.log2
+import com.raveldev.tuner.utility.FrequencyHelper
 
 
-
-/**
- * A simple [Fragment] subclass as the default destination in the navigation.
- */
 class TunerFragment : Fragment() {
     private lateinit var homeViewModel: HomeViewModel
     private var _binding: FragmentTunerBinding? = null
-
+    private val frequencyHelper : FrequencyHelper =  FrequencyHelper()
 
     private val binding get() = _binding!!
 
@@ -52,7 +45,6 @@ class TunerFragment : Fragment() {
             textView.text = it
         })
         try{
-            generateFrequencyMap()
             var recordAudioGranted = ContextCompat.checkSelfPermission(this.requireContext(), "android.permission.RECORD_AUDIO")
             if(recordAudioGranted == PackageManager.PERMISSION_GRANTED){
                 val dispatcher: AudioDispatcher =
@@ -64,7 +56,7 @@ class TunerFragment : Fragment() {
                         if(pitchInHz > 0) {
                             //given our pitch in hz, which value in our map of notes is closest
                             activity?.runOnUiThread(Runnable {
-                                val tunerResult = getNoteForFrequency(pitchInHz);
+                                val tunerResult = frequencyHelper.getNoteForFrequency(pitchInHz);
 
                                 noteTextView.text = tunerResult.GetDisplayText();
  								textView.text = "${pitchInHz}";
@@ -93,94 +85,8 @@ class TunerFragment : Fragment() {
         return root
 
     }
-    val BASE_FREQUENCY_HZ = 440.0;
-    val TWELTH_ROOT_TWO = 1.059463094359
-    val BASE_NOTE_STR = "A4"
-    //A4
-    val BASE_NOTE = 81
-    val STARTING_NOTE = 0;
-    val HIGHEST_NOTE = 127
-    val NOTE_ORDER = listOf("A", "A#", "B", "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#")
-    val NOTE_ORDER_FREQ = listOf("C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B")
-    var FREQUENCY_LIST  = mutableListOf<Float>()
-    val MAX_NOTE_ORDER = 11;
-    val STARTING_OCTAVE = 0;
-    val HIGHEST_OCTAVE = 8;
-    var arrayIndextoNote = mutableMapOf<Int, String>()
-    var mapNoteToFreq = mapOf<String, Double>();
-    //C0 is in the "-2" octave in MIDI
-    private fun generateFrequencyMap(){
-        //C0(-2)
-        mapNoteToFreq = generateNoteFrequencies();
-
-    }
-    fun generateNoteFrequencies(): Map<String, Double> {
-        val noteNames = listOf("C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B")
-        val baseFrequency = 440.0 // A4
-        val baseIndex = 9 + 12 * 4 // A4 is the 9th note in the 4th octave
-
-        val frequencies = mutableMapOf<String, Double>()
-
-        for (octave in 0..8) {
-            for ((i, note) in noteNames.withIndex()) {
-                val noteIndex = i + 12 * octave
-                val semitoneDifference = noteIndex - baseIndex
-                val frequency = baseFrequency * Math.pow(2.0, semitoneDifference / 12.0)
-                val noteKey = "$note$octave"
-                frequencies[noteKey] = String.format("%.2f", frequency).toDouble()
-            }
-        }
-
-        return frequencies
-    }
-    private fun getNoteForFrequency(pitchInHz: Float) : TunerResult{
-
-        val semitones = 12 * log2(pitchInHz / BASE_FREQUENCY_HZ)
-
-        val noteIndex = ((semitones % 12) + 12) % 12  // Ensure positive index
-
-        val octave = (semitones / 12).toInt() + 4 // Relative to A4
-        var isSharp : Boolean = false;
-        var inTune: Boolean = false;
-        val noteName = "${NOTE_ORDER[noteIndex.toInt()]}${octave}";
-        if(mapNoteToFreq.containsKey(noteName)) {
-            val exactPitch = mapNoteToFreq[noteName]!!;
-            val freqDiff = abs(pitchInHz - mapNoteToFreq[noteName]!!);
-            //if diff greater than 3-5% of a semitone, then it's out of tune
-            if(freqDiff > 4){
-                isSharp = pitchInHz > exactPitch;
-            }
-            else{
-                inTune = true;
-            }
-            Log.i("derp", freqDiff.toString());
-        }
-        return TunerResult(noteDisplayText = noteName, inTune = inTune, isFlat = !isSharp, isSharp = isSharp);
 
 
-    }
-    private fun getClosestNoteString(
-        start: Int,
-        end: Int,
-        myNumber: Float
-    ): String {
-        val mid = (start + end) / 2
-        if (FREQUENCY_LIST[mid] == myNumber) return arrayIndextoNote[mid]!!
-        if (start == end - 1) return if (abs(FREQUENCY_LIST[end] - myNumber) >= abs(
-                FREQUENCY_LIST[start] - myNumber
-            )
-        ) arrayIndextoNote[start]!! else arrayIndextoNote[end]!!
-        return if (FREQUENCY_LIST[mid] > myNumber) getClosestNoteString(
-            start,
-            mid,
-            myNumber
-        ) else getClosestNoteString(mid, end, myNumber)
-    }
-
-    private fun generateFrequencyForNoteNumber(note :String ) : Double {
-        val halfSteps = NOTE_ORDER_FREQ.indexOf(note) + 12 * (note.substring(0, 1).uppercase().indexOf('4')) // Find the note's position in the chromatic scale
-        return (BASE_FREQUENCY_HZ * 2.0) .pow(halfSteps / 12.0)
-    }
 
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
