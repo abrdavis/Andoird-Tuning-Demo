@@ -11,6 +11,7 @@ import kotlin.times
 class FrequencyHelper {
 
     val BASE_FREQUENCY_HZ = 440.0;
+    val A4_SEMITONE = 69;
     val TWELTH_ROOT_TWO = 1.059463094359
     val BASE_NOTE_STR = "A4"
     //A4
@@ -31,17 +32,14 @@ class FrequencyHelper {
     //C0 is in the "-2" octave in MIDI
 
     fun generateNoteFrequencies(): Map<String, Double> {
-        val noteNames = listOf("C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B")
-        val baseFrequency = 440.0 // A4
-        val baseIndex = 9 + 12 * 4 // A4 is the 9th note in the 4th octave
-
         val frequencies = mutableMapOf<String, Double>()
 
         for (octave in STARTING_OCTAVE..HIGHEST_OCTAVE) {
-            for ((i, note) in noteNames.withIndex()) {
-                val noteIndex = i + 12 * octave
-                val semitoneDifference = noteIndex - baseIndex
-                val frequency = baseFrequency * Math.pow(2.0, semitoneDifference / 12.0)
+            for ((i, note) in NOTE_ORDER_FREQ.withIndex()) {
+                val currentNoteSemitone = i + (12 * (octave+1))
+                val semitoneDifference = currentNoteSemitone - A4_SEMITONE
+                val powerToRaiseTo = semitoneDifference / 12.0;
+                val frequency = BASE_FREQUENCY_HZ * 2.0.pow(powerToRaiseTo)
                 val noteKey = "$note$octave"
                 frequencies[noteKey] = String.format("%.2f", frequency).toDouble()
             }
