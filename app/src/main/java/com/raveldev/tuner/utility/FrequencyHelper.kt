@@ -5,23 +5,18 @@ import com.raveldev.tuner.models.TunerResult
 import kotlin.math.abs
 import kotlin.math.log2
 import kotlin.math.pow
-import kotlin.text.indexOf
-import kotlin.times
 
 class FrequencyHelper {
 
     val BASE_FREQUENCY_HZ = 440.0;
     val A4_SEMITONE = 69;
-    val TWELTH_ROOT_TWO = 1.059463094359
-    val BASE_NOTE_STR = "A4"
+
     //A4
-    val BASE_NOTE = 81
-    val STARTING_NOTE = 0;
-    val HIGHEST_NOTE = 127
+
     val NOTE_ORDER = listOf("A", "A#", "B", "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#")
     val NOTE_ORDER_FREQ = listOf("C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B")
     var FREQUENCY_LIST  = mutableListOf<Float>()
-    val MAX_NOTE_ORDER = 11;
+
     val STARTING_OCTAVE = 0;
     val HIGHEST_OCTAVE = 8;
     var arrayIndextoNote = mutableMapOf<Int, String>()
@@ -29,7 +24,6 @@ class FrequencyHelper {
     constructor(){
         mapNoteToFreq = generateNoteFrequencies();
     }
-    //C0 is in the "-2" octave in MIDI
 
     fun generateNoteFrequencies(): Map<String, Double> {
         val frequencies = mutableMapOf<String, Double>()
@@ -54,12 +48,13 @@ class FrequencyHelper {
         val noteIndex = ((semitones % 12) + 12) % 12  // Ensure positive index
 
         val octave = (semitones / 12).toInt() + 4 // Relative to A4
-        var isSharp : Boolean = false;
-        var inTune: Boolean = false;
+        var isSharp  = false;
+        var inTune = false;
         val noteName = "${NOTE_ORDER[noteIndex.toInt()]}${octave}";
         if(mapNoteToFreq.containsKey(noteName)) {
             val exactPitch = mapNoteToFreq[noteName]!!;
             val freqDiff = abs(pitchInHz - mapNoteToFreq[noteName]!!);
+
             //if diff greater than 3-5% of a semitone, then it's out of tune
             if(freqDiff > 4){
                 isSharp = pitchInHz > exactPitch;
@@ -73,6 +68,7 @@ class FrequencyHelper {
 
 
     }
+
     private fun getClosestNoteString(
         start: Int,
         end: Int,
@@ -91,9 +87,5 @@ class FrequencyHelper {
         ) else getClosestNoteString(mid, end, myNumber)
     }
 
-    private fun generateFrequencyForNoteNumber(note :String ) : Double {
-        val halfSteps = NOTE_ORDER_FREQ.indexOf(note) + 12 * (note.substring(0, 1).uppercase().indexOf('4')) // Find the note's position in the chromatic scale
-        return (BASE_FREQUENCY_HZ * 2.0) .pow(halfSteps / 12.0)
-    }
 
 }
