@@ -10,7 +10,7 @@ data class TunerResult(val noteDisplayText:String,
             return "$noteDisplayText is sharp";
         }
         else if(isFlat){
-            "$noteDisplayText is flat";
+            return "$noteDisplayText is flat";
         }
 
         return noteDisplayText;
